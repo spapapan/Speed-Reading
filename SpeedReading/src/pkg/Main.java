@@ -17,6 +17,8 @@ import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -35,6 +37,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 public class Main extends JFrame implements ActionListener,ItemListener{
 	
+	private URLcontent getContentFromURL;
 	private FrameDragListener frameDragListener;
 	
 	private JLabel msg;
@@ -68,8 +71,15 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	private int fontstyle = Font.BOLD;
 	private int fontsize = 19;
 	
+	private boolean iscontentfromurl;
+	private String contentfromurl="";
+	private String currentcontentfromurl="";
+	
+	private final String numRegex   = ".*[0-9].*";
+	private final String alphaRegex = ".*[A-Z].*";
+	
 	public static void main(String[] args){
-		new Main();
+        new Main();
 	}
 	
 	public Main()
@@ -93,7 +103,6 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 
 		SwingUtilities.updateComponentTreeUI(this);
 
-		
 		start();
 	}
 	
@@ -124,30 +133,42 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	private void StartReading()
 	{
 		String data = getClipboard();
+		stopTimer();
 		
 		if (isURL(data))
 		{
+			iscontentfromurl = true;
 			getContentFromUrl(data);
 		}
 		else
 		{
+			iscontentfromurl = false;
 			getContentFromString(data);
 		}
 	}
 	
 	private void getContentFromString(String data)
 	{
+		List<String> wordlist = new ArrayList<String>();
 		data = data.replace("." ," ");
 		data = data.replace("," , " ");
 		String[] words = data.split(" ");
+		
+		for (int i=0; i<words.length; i++){
+			if (words[i].matches(".*\\w.*"))
+			{
+				wordlist.add(words[i]);
+			}
+		}
+		
 		ActionListener listener = new ActionListener(){
 	        public void actionPerformed(ActionEvent event){
-	        	if (counter >= words.length){
+	        	if (counter >= wordlist.size()){
 	        		timer.stop();
 	        	}
 	        	else
 	        	{ 
-	        		getmsgLabel().setText(words[counter]);
+	        		getmsgLabel().setText(wordlist.get(counter));
 	        		counter++;
 	        	}
 	        }
@@ -158,7 +179,43 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	
 	private void getContentFromUrl(String url)
 	{
-		System.out.println("url");
+		if (currentcontentfromurl.equals(url))
+		{
+			getContentFromString(contentfromurl);
+		}
+		else
+		{
+	    
+
+		stopTimer();
+		counter = 0;
+		
+		getContentFromURL = new URLcontent();
+		contentfromurl = getContentFromURL.getOnlineDocument(url);
+
+		 if (contentfromurl.equals("404"))
+		 {
+			 getmsgLabel().setFont(new Font("Serif", Font.PLAIN, 17));
+		     getmsgLabel().setText("(wikipedia or pdf urls only)");
+		     stopTimer();
+		     counter=0;
+		     currentcontentfromurl = url;
+		 }
+		 else
+		 {
+			 currentcontentfromurl = url;
+		     getContentFromString(contentfromurl);
+		 }
+		}
+	}
+	
+	private void stopTimer(){
+		if (timer != null){
+			if (timer.isRunning())
+			{
+				timer.stop();
+			}
+		}
 	}
 	
 	private void Stop()
@@ -172,28 +229,52 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	
 	private void Pause()
 	{
-		if (timer != null)
-		{
-		timer.stop();
-		}
+		stopTimer();
 	}
 	
 	private void Info()
 	{
 		
+		stopTimer();
+		int totwords=0;
 		String timeunit;
-		String data = getClipboard();
+		String data;
+		
+		if (iscontentfromurl)
+		{
+			data = contentfromurl;
+		}
+		else
+		{
+			data = getClipboard();
+		}
+		 
 		data = data.replace("." ," ");
 		data = data.replace("," , " ");
 		String[] words = data.split(" ");
+		
+		for (int i=0; i < words.length; i++){
+			if (words[i].matches(".*\\w.*"))
+			{
+				totwords++;
+			}
+		}
+		
+		
 		getmsgLabel().setFont(new Font("Serif", Font.PLAIN, 17));
 		
-		double readtime = words.length/wps;
+		double readtime = totwords/wps;
 
 		if (readtime > 60)
 		{
 			timeunit = "min";
 			readtime = readtime/60;
+			
+			if (readtime > 60)
+			{
+				timeunit = "hours";
+				readtime = readtime/60;
+			}
 		}
 		else
 		{
@@ -202,7 +283,7 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 		
 		String readtimestring = new DecimalFormat("##.##").format(readtime);
 		
-		getmsgLabel().setText("<html>Total words: "+ String.valueOf(words.length)+" <br> Read time: " + readtimestring + " " + timeunit + "<br>");
+		getmsgLabel().setText("<html>Total words: "+ String.valueOf(totwords)+" <br> Read time: " + readtimestring + " " + timeunit + "<br>");
 	}
 	
 	private String getClipboard()
