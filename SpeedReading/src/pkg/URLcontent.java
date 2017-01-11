@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import javax.swing.SwingWorker;
+
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.cos.COSName;
@@ -27,15 +29,20 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class URLcontent {
+public class URLcontent extends SwingWorker {
 
-	public URLcontent() 
-	{
-		// TODO Auto-generated constructor stub
-	}
+	private Main main;
+	private String url;
 	
-	public String getOnlineDocument(String url){
-		
+	public URLcontent(String URL,Main mainclass)
+	{
+		this.main = mainclass;
+		this.url = URL; 
+	}
+
+	@Override
+	protected Object doInBackground() throws Exception {
+
 		String returndoc;
 		if (url.substring(url.length()-3).equals("pdf"))
 		{
@@ -50,7 +57,8 @@ public class URLcontent {
 			returndoc = "404";
 		}
 		
-		return returndoc;
+		main.startReadingFromAsync(returndoc,url);
+		return null;
 	}
 	
 	private String getWiki(String url)
@@ -218,4 +226,5 @@ public class URLcontent {
 			e.printStackTrace();
 		}
 	}
+
 }

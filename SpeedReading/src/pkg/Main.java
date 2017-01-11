@@ -5,6 +5,7 @@ import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.HeadlessException;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -15,6 +16,7 @@ import java.awt.event.AdjustmentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -42,6 +45,7 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	
 	private JLabel msg;
 	private JLabel speedlb;
+	private JLabel loading;
 	private JButton start;
 	private JButton stop;
 	private JButton pause;
@@ -75,9 +79,6 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	private String contentfromurl="";
 	private String currentcontentfromurl="";
 	
-	private final String numRegex   = ".*[0-9].*";
-	private final String alphaRegex = ".*[A-Z].*";
-	
 	public static void main(String[] args){
         new Main();
 	}
@@ -85,19 +86,16 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	public Main()
 	{
 		setMenu();
+
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnsupportedLookAndFeelException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -108,23 +106,7 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	
 	public void start()
 	{
-
-	   msg = getmsgLabel();
-	   speedlb = getSpeedLabel();
-	   start = getStartButton();
-	   pause = getPauseButton();
-	   stop = getStopButton();
-	   infobtn = getInfoButton();
-	   scrollbar = getScrollBar();
-
-	   add(msg);
-	   add(speedlb);
-	   add(start);
-	   add(pause);
-	   add(stop);
-	   add(infobtn);
-	   add(scrollbar);
-	   
+	   loadGUI();
 	   setFrameparam();
 	   setListeners();
 
@@ -189,10 +171,20 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 
 		stopTimer();
 		counter = 0;
-		
-		getContentFromURL = new URLcontent();
-		contentfromurl = getContentFromURL.getOnlineDocument(url);
+		getmsgLabel().setVisible(false);
+		getLoading().setVisible(true);
+		new URLcontent(url,this).execute();
 
+		}
+	}
+	
+	public void startReadingFromAsync(String content, String url)
+	{
+		getmsgLabel().setVisible(true);
+		getLoading().setVisible(false);
+		
+		contentfromurl = content;
+		
 		 if (contentfromurl.equals("404"))
 		 {
 			 getmsgLabel().setFont(new Font("Serif", Font.PLAIN, 17));
@@ -206,7 +198,6 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 			 currentcontentfromurl = url;
 		     getContentFromString(contentfromurl);
 		 }
-		}
 	}
 	
 	private void stopTimer(){
@@ -314,6 +305,27 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 	    } catch (Exception e) {
 	        return false;
 	    }
+	}
+	
+	private void loadGUI()
+	{
+		   msg = getmsgLabel();
+		   speedlb = getSpeedLabel();
+		   start = getStartButton();
+		   pause = getPauseButton();
+		   stop = getStopButton();
+		   infobtn = getInfoButton();
+		   scrollbar = getScrollBar();
+		   loading = getLoading();
+
+		   add(msg);
+		   add(speedlb);
+		   add(start);
+		   add(pause);
+		   add(stop);
+		   add(infobtn);
+		   add(scrollbar);
+		   add(loading);
 	}
 	
 	private void setFrameparam()
@@ -469,6 +481,18 @@ public class Main extends JFrame implements ActionListener,ItemListener{
 			speedlb.setFont(new Font("Serif", Font.PLAIN, 16));
 		}
 		return speedlb;
+	}
+	
+	private JLabel getLoading()
+	{
+		if (loading == null)
+		{
+			loading = new JLabel();
+			loading.setIcon(new ImageIcon("Images/loading.gif"));
+			loading.setBounds(130,38,50,50);
+			loading.setVisible(false);
+		}
+		return loading;
 	}
 	
 	private JButton getStartButton()
